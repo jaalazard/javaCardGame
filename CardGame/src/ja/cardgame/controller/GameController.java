@@ -6,16 +6,7 @@ import java.util.List;
 import ja.cardgame.model.Deck;
 import ja.cardgame.model.Player;
 import ja.cardgame.model.PlayingCard;
-
-class View {
-	public void something() {
-
-	}
-
-	public void setController(GameController gc) {
-
-	}
-}
+import ja.cardgame.view.View;
 
 public class GameController {
 
@@ -40,14 +31,14 @@ public class GameController {
 
 	public void run() {
 		while (gameState == GameState.AddingPlayers) {
-			view.something();
+			view.promptForPlayerName();
 		}
 		switch (gameState) {
 		case CardsDealt:
-			view.something();
+			view.promptForFlip();
 			break;
 		case WinnerRevealed:
-			view.something();
+			view.promptForNewGame();
 			break;
 		}
 	}
@@ -55,16 +46,17 @@ public class GameController {
 	public void addPlayer(String playerName) {
 		if (gameState == GameState.AddingPlayers) {
 			players.add(new Player(playerName));
-			view.something();
+			view.showPlayerName(players.size(), playerName);
 		}
 	}
 
 	public void startGame() {
 		if (gameState != GameState.CardsDealt) {
 			deck.shuffle();
+			int playerIndex = 1;
 			for (Player player : players) {
 				player.addCardToHand(deck.removeTopcard());
-				view.something();
+				view.showFaceDownCardForPlayer(playerIndex++, player.getName());
 			}
 			gameState = GameState.CardsDealt;
 		}
@@ -72,15 +64,23 @@ public class GameController {
 	}
 
 	public void flipCards() {
+		System.out.println("flipkards");
+
+		int playerIndex = 1;
 		for (Player player : players) {
 			PlayingCard pc = player.getCard(0);
 			pc.flip();
-			view.something();
+			view.showCardForPlayer(playerIndex++, player.getName(), pc.getRank().toString(), pc.getSuit().toString());
 		}
+		this.evaluateWinner();
+		this.displayWinner();
+		rebuildDeck();
+		gameState = GameState.WinnerRevealed;
+		this.run();
 	}
 
 	void displayWinner() {
-		view.something();
+		view.showWinner(winner.getName());
 	}
 
 	void rebuildDeck() {
@@ -114,10 +114,13 @@ public class GameController {
 			}
 			if (newBestPlayer) {
 				bestPlayer = player;
+				winner = bestPlayer;
 				PlayingCard pc = player.getCard(0);
 				bestRank = pc.getRank().value();
 				bestSuit = pc.getSuit().value();
 			}
+			gameState = GameState.WinnerRevealed;
+
 		}
 	}
 
